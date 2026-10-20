@@ -11,6 +11,7 @@ This project implements a TCP database server with Redis-inspired commands, RESP
 - RESP-style response formatting
 - Command dispatch separated from networking
 - In-memory storage with `std::unordered_map`
+- Configurable cache capacity with O(1) LRU eviction using a hash map and linked list
 - Lazy expiration using `std::chrono`
 - Append-only file persistence and replay
 - Multi-client handling with `std::thread`
@@ -289,7 +290,7 @@ The tests cover:
 - No replication.
 - No transactions.
 - No pub/sub.
-- No eviction policy.
+- Cache capacity defaults to 10,000 keys; least-recently-used keys are evicted when full.
 - No snapshots.
 
 ## Future Improvements

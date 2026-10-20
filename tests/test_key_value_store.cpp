@@ -1,6 +1,7 @@
 #include "key_value_store.hpp"
 
 #include <cassert>
+#include <stdexcept>
 #include <chrono>
 #include <thread>
 #include <vector>
@@ -145,7 +146,44 @@ void test_store_supports_concurrent_increments() {
     assert(*value == std::to_string(thread_count * increments_per_thread));
 }
 
+
+void test_store_evicts_least_recently_used_key() {
+    KeyValueStore store(2);
+    store.set("a", "1");
+    store.set("b", "2");
+
+    assert(store.get("a") == "1"); // a becomes most recently used
+    store.set("c", "3");           // b should be evicted
+
+    assert(store.get("a") == "1");
+    assert(!store.get("b").has_value());
+    assert(store.get("c") == "3");
+}
+
+void test_store_updates_existing_key_without_evicting_another() {
+    KeyValueStore store(2);
+    store.set("a", "1");
+    store.set("b", "2");
+    store.set("a", "updated");
+
+    assert(store.get("a") == "updated");
+    assert(store.get("b") == "2");
+}
+
+void test_store_rejects_zero_capacity() {
+    bool threw = false;
+    try {
+        KeyValueStore store(0);
+    } catch (const std::invalid_argument&) {
+        threw = true;
+    }
+    assert(threw);
+}
+
 void run_key_value_store_tests() {
+    test_store_evicts_least_recently_used_key();
+    test_store_updates_existing_key_without_evicting_another();
+    test_store_rejects_zero_capacity();
     test_store_sets_and_gets_value();
     test_store_reports_missing_value();
     test_store_deletes_existing_key();
